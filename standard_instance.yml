@@ -1,0 +1,243 @@
+# Vistra Foundational CloudFormation Template
+AWSTemplateFormatVersion: 2010-09-09
+Description: Vistra Foundation - Standard Instance
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Instance Configuration" 
+        Parameters:
+          - instanceName
+          - instanceType
+          - KeyName
+          - instanceAMI
+      -
+        Label:
+          default: "Instance Tags" 
+        Parameters:
+          - instanceAppCode
+          - instanceAppName
+          - instanceAppRole
+          - instanceDescription
+          - instanceEnvironment
+          - instanceBusinessUnit
+          - instanceAppCriticality
+          - instanceContact
+          - instanceBackup
+          - instanceBackupHour
+          - instanceMonitoring
+          - instanceStart
+          - instanceStop
+          - dataClassification
+      -
+        Label:
+          default: "Network Configuration"
+        Parameters:
+          - SubnetID
+          - SecurityGroups
+          - VPCId
+# Custom parameters
+Parameters:
+  KeyName:
+    Description: "Name of existing EC2 keypair, required for access to the server after creation."
+    Type: AWS::EC2::KeyPair::KeyName
+  SubnetID:
+    Description: "Name of existing subnets within the VPC"
+    Type: AWS::EC2::Subnet::Id
+  SecurityGroups:
+    Description: "Name of existing Security Group within the VPC"
+    Type: List<AWS::EC2::SecurityGroup::Id>
+  instanceAMI:
+    Description: "AMI ID for Instance creation"
+    Type: AWS::EC2::Image::Id
+    Default: ami-00a929b66ed6e0de6
+  instanceName:
+    Description: "Name of the instance (host name)"
+    Type: String
+    Default: techcoffee-instance1
+  instanceAppCode:
+    Description: "3 letter App code (Lower case)"
+    Type: String
+    Default: tec
+  instanceAppName:
+    Description: "Name of the App"
+    Type: String
+    Default: coffee
+  instanceAppCriticality:
+    Description: "App criticality (mission_critical, business_critical, business_operations, administrative)"
+    Type: String
+    AllowedValues:
+      - mission_critical
+      - business_critical
+      - business_operations
+      - administrative
+    Default: business_operations
+  instanceAppRole:
+    Description: "App Role (web, app, db, fileshare, batch, report)"
+    Type: String
+    AllowedValues:
+      - web
+      - app
+      - db
+      - fileshare
+      - batch
+      - report
+    Default: app
+  instanceBusinessUnit:
+    Description: "App Business Unit (corporate, nuclear, fossil, wholesale, retail, technology_services, 4change)"
+    Type: String
+    AllowedValues:
+      - corporate
+      - nuclear
+      - fossil
+      - wholesale
+      - retail
+      - technology_services
+      - 4change
+    Default: technology_services
+  instanceContact:
+    Description: "Email of App owner"
+    Type: String
+    Default: mark.hugley@gmail.com
+  instanceDescription:
+    Description: "Description of the instance / App"
+    Type: String
+    Default: application server
+  instanceEnvironment:
+    Description: "Instance / App environment (production, development, dr, non_production, pre_production, qa, test, training, uat)"
+    Type: String
+    AllowedValues:
+      - production
+      - development
+      - dr
+      - non_production
+      - pre_production
+      - qa
+      - test
+      - training
+      - uat
+    Default: development
+  instanceBackup:
+    Description: "Backup enabled for instance (true or false)"
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+  instanceMonitoring:
+    Description: "Monitoring enabled for instance (true or false). REQUIRED FOR PRODUCTION ENVRIONMENT"
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+  instanceBackupHour:
+    Description: "Backup hour (for 8:00pm backup, hour would be: 20)"
+    Type: String
+    Default: 20
+  instanceType:
+    Description: "Instance Type (e.g. m4.large)"
+    Type: String
+    Default: t3.micro
+  instanceStart:
+    Description: "Start time of instance, in CRON format. (example for 8am Monday-Friday: 0 8 * * 1-5)"
+    Type: String
+    Default: 0 9 * * 1-5
+  instanceStop:
+    Description: "Stop time of instance, in CRON format. (example for 5pm Monday-Friday: 0 17 * * 1-5)"
+    Type: String
+    Default: 0 17 * * 0-6
+  dataClassification:
+    Description: "Data classification (public, internal_use_only, confidential, restricted)"
+    Type: String
+    AllowedValues:
+      - public
+      - internal_use_only
+      - confidential
+      - restricted
+    Default: restricted
+  PublicIP:
+    Description: "Public or Private"
+    Type: String
+    Default: false
+  # VpcId:
+  #   Description: "The VPC you are deploying the instance in"
+  #   Type: String
+Resources:
+  StandardInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref instanceAMI
+      InstanceType: !Ref instanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: !Ref PublicIP
+        DeviceIndex: "0"
+        SubnetId: !Ref SubnetID
+        GroupSet: !Ref SecurityGroups
+      # UserData:
+      #   Fn::Base64:
+      #     !Sub |
+      #         # example Linux:
+      #         #!/bin/bash -ex
+      #         # sudo cd /code/dir && ./script.sh
+      #         # example Windows:
+      #         # cd C:/code/folder && ./script.ps1
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sda1"
+          Ebs:
+            VolumeType: "gp3"
+            VolumeSize: "20"
+            DeleteOnTermination: true
+            Encrypted: true
+      Tags:
+        -
+          Key: "Name"
+          Value: !Ref instanceName
+        -
+          Key: "business_unit"
+          Value: !Ref instanceBusinessUnit
+        -
+          Key: "description"
+          Value: !Ref instanceDescription
+        -
+          Key: "application_code"
+          Value: !Ref instanceAppCode
+        -
+          Key: "application_criticality"
+          Value: !Ref instanceAppCriticality
+        -
+          Key: "application_role"
+          Value: !Ref instanceAppRole
+        -
+          Key: "application_name"
+          Value: !Ref instanceAppName
+        -
+          Key: "environment"
+          Value: !Ref instanceEnvironment
+        -
+          Key: "backup"
+          Value: !Ref instanceBackup
+        -
+          Key: "backup_hour"
+          Value: !Ref instanceBackupHour
+        -
+          Key: "contact"
+          Value: !Ref instanceContact
+        -
+          Key: "monitoring"
+          Value: !Ref instanceMonitoring
+        -
+          Key: "start"
+          Value: !Ref instanceStart
+        -
+          Key: "stop"
+          Value: !Ref instanceStop
+        -
+          Key: "data_classification"
+          Value: !Ref dataClassification
+Outputs:
+  instanceID:
+    Description: "InstanceID of Standard Instance"
+    Value: !Ref StandardInstance

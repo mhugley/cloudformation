@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Security Groups for Linux and Windows administration
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID to associate with the security groups
+
+  AdminIp:
+    Type: String
+    Description: IP range allowed to access instances
+    Default: 0.0.0.0/0
+
+Resources:
+  LinuxAdminSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH access for Linux administration
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminIp
+      Tags:
+        - Key: Name
+          Value: LinuxAdminSG
+
+  WindowsAdminSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow RDP access for Windows administration
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: !Ref AdminIp
+      Tags:
+        - Key: Name
+          Value: WindowsAdminSG
+
+Outputs:
+  LinuxSGId:
+    Description: Security Group ID for Linux Admin
+    Value: !Ref LinuxAdminSecurityGroup
+
+  WindowsSGId:
+    Description: Security Group ID for Windows Admin
+    Value: !Ref WindowsAdminSecurityGroup
